@@ -1,0 +1,183 @@
+Validate dynamic Html Id with Regular Expression
+
+In some web applications, a html tag Id is dynamically generated for each user session. When using Selenium to identify the element, using locators such as Id, name, xpath may not work because the dynamic Id pattern changes constantly.
+
+One option would be to use Regular Expression in Xpath or with other locators and locate the element. Before creating a generic regular expression, you need to validate the Regular Expression to make sure that the pattern of the regular expression covers all the possible scenarios. For example, in the user registration form below, the id changes and it has a pattern like "userId_mm_dd_yyyy_{5 digit random number}. We can use this pattern below when finding the userId Element. 
+
+UserIdPattern="userid_[0-9]{1,2}_[0-9]{1,2}_[0-9]{4}_[0-9]{5}";
+
+
+Here is the Java code to validate regular expression for this pattern. 
+
+Step 1:  Create a Java Project, add a package, add a class "DynamicUserIdValidator.java", add a TestNG class "UserIdValidatorTest.java" and define testng.xml. 
+
+
+
+Step 2: write the code in the DynamicUserIdValidator.java class
+
+package com.seleniummaster.regularexpression;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+public class DynamicUserIdValidator {
+private Pattern pattern;
+private Matcher matcher;
+private static final String UserIdPattern="userid_[0-9]{1,2}_[0-9]{1,2}_[0-9]{4}_[0-9]{5}";
+public DynamicUserIdValidator()
+{
+  pattern=Pattern.compile(UserIdPattern);
+}
+/*
+* validate userId with pattern
+* @param userId
+*/
+public boolean validate (final String userId)
+{
+  matcher=pattern.matcher(userId);
+  return matcher.matches();
+}
+}
+Step 3: write the code in the UserIdValidatorTest.java class
+
+package com.seleniummaster.regularexpression;
+
+import org.testng.Assert;
+import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterClass;
+
+public class UserIdValidatorTest {
+  private DynamicUserIdValidator userIdValidator;
+//test valid user Ids
+  @Test(dataProvider = "ValidUserIdValidator")
+  public void ValidUserIdTest(String[] userIds) {
+
+    for (String eachUserId : userIds) {
+      boolean valid = userIdValidator.validate(eachUserId);
+      System.out
+          .println("UserId is valid : " + eachUserId + " , " + valid);
+      Assert.assertEquals(valid, true);
+    }
+    System.out.println("Valid User Id Validation Test Completed");
+  }
+//test invalid user Ids
+  @Test(dataProvider = "InvalidUserIdValidator",dependsOnMethods = "ValidUserIdTest")
+  public void InValidUserIdTest(String[] userIds) {
+
+    for (String eachUserId : userIds) {
+      boolean valid = userIdValidator.validate(eachUserId);
+      System.out
+          .println("UserId is valid : " + eachUserId + " , " + valid);
+      Assert.assertEquals(valid, false);
+    }
+    System.out.println("Invalid User Id Validation Test Completed");
+  }
+//valid user Id sample data
+  @DataProvider
+  public Object[][] ValidUserIdValidator() {
+    return new Object[][] { { new String[] { "userid_4_23_2005_85083",
+        "userid_11_13_2000_31277", "userid_8_27_2014_83046",
+        "userid_12_24_2006_63060", "userid_9_8_2000_56086",
+        "userid_7_7_2005_30338", "userid_10_15_2006_54936",
+        "userid_9_14_2014_65261", "userid_1_30_2010_64475",
+        "userid_2_1_2004_58032", "userid_8_4_2010_26849",
+        "userid_10_19_2012_23906", "userid_5_29_2004_60408",
+        "userid_6_6_2011_82682", "userid_6_13_2005_32055",
+        "userid_12_17_2013_76612", "userid_3_22_2001_41024",
+        "userid_12_3_2010_51135", "userid_4_13_2002_50477",
+        "userid_9_25_2014_10160", "userid_5_9_2009_18337",
+        "userid_4_8_2002_42764", "userid_5_29_2003_37048",
+        "userid_12_16_2002_97276" } } };
+  }
+//invalid user Id sample data
+  @DataProvider
+  public Object[][] InvalidUserIdValidator() {
+    return new Object[][] { { new String[] { "userid_108_28_2014_5815",
+        "userid_104_8_2011_4572", "userid_101_12_2001_4319",
+        "userid_114_10_2012_2718", "userid_112_11_2011_6250",
+        "userid_118_7_2000_9750", "userid_117_11_2007_4355",
+        "userid_108_12_2005_3010", "userid_113_21_2013_5157",
+        "userid_112_7_2013_7582", "userid_103_15_2006_3962",
+        "userid_117_13_2011_4727", "userid_109_5_2001_7123",
+        "userid_103_12_2009_5901", "userid_111_19_2002_9712",
+        "userid_119_1_2008_5702", "userid_105_12_2002_6523",
+        "userid_100_25_2000_1151", "userid_107_5_2006_4363",
+        "userid_108_1_2010_5425", "userid_113_12_2011_6270",
+        "userid_108_26_2000_7718", "userid_120_3_2003_3281",
+        "userid_118_29_2003_4848" } } };
+  }
+
+  @BeforeClass
+  public void initData() {
+    userIdValidator = new DynamicUserIdValidator();
+  }
+
+  @AfterClass
+  public void afterClass() {
+  }
+
+}
+Step 4: run the test as TestNG Test.
+
+ 
+
+Step 5: see the result below and console output. The result showed that all the valid userId and invalid userId tests passed for each data set in the validation, so we can use the pattern below in the element locator. 
+
+
+
+UserIdPattern="userid_[0-9]{1,2}_[0-9]{1,2}_[0-9]{4}_[0-9]{5}";
+ Console Output
+
+UserId is valid : userid_4_23_2005_85083 , true
+  UserId is valid : userid_11_13_2000_31277 , true
+  UserId is valid : userid_8_27_2014_83046 , true
+  UserId is valid : userid_12_24_2006_63060 , true
+  UserId is valid : userid_9_8_2000_56086 , true
+  UserId is valid : userid_7_7_2005_30338 , true
+  UserId is valid : userid_10_15_2006_54936 , true
+  UserId is valid : userid_9_14_2014_65261 , true
+  UserId is valid : userid_1_30_2010_64475 , true
+  UserId is valid : userid_2_1_2004_58032 , true
+  UserId is valid : userid_8_4_2010_26849 , true
+  UserId is valid : userid_10_19_2012_23906 , true
+  UserId is valid : userid_5_29_2004_60408 , true
+  UserId is valid : userid_6_6_2011_82682 , true
+  UserId is valid : userid_6_13_2005_32055 , true
+  UserId is valid : userid_12_17_2013_76612 , true
+  UserId is valid : userid_3_22_2001_41024 , true
+  UserId is valid : userid_12_3_2010_51135 , true
+  UserId is valid : userid_4_13_2002_50477 , true
+  UserId is valid : userid_9_25_2014_10160 , true
+  UserId is valid : userid_5_9_2009_18337 , true
+  UserId is valid : userid_4_8_2002_42764 , true
+  UserId is valid : userid_5_29_2003_37048 , true
+  UserId is valid : userid_12_16_2002_97276 , true
+  Valid User Id Validation Test Completed
+  
+  UserId is valid : userid_108_28_2014_5815 , false
+  UserId is valid : userid_104_8_2011_4572 , false
+  UserId is valid : userid_101_12_2001_4319 , false
+  UserId is valid : userid_114_10_2012_2718 , false
+  UserId is valid : userid_112_11_2011_6250 , false
+  UserId is valid : userid_118_7_2000_9750 , false
+  UserId is valid : userid_117_11_2007_4355 , false
+  UserId is valid : userid_108_12_2005_3010 , false
+  UserId is valid : userid_113_21_2013_5157 , false
+  UserId is valid : userid_112_7_2013_7582 , false
+  UserId is valid : userid_103_15_2006_3962 , false
+  UserId is valid : userid_117_13_2011_4727 , false
+  UserId is valid : userid_109_5_2001_7123 , false
+  UserId is valid : userid_103_12_2009_5901 , false
+  UserId is valid : userid_111_19_2002_9712 , false
+  UserId is valid : userid_119_1_2008_5702 , false
+  UserId is valid : userid_105_12_2002_6523 , false
+  UserId is valid : userid_100_25_2000_1151 , false
+  UserId is valid : userid_107_5_2006_4363 , false
+  UserId is valid : userid_108_1_2010_5425 , false
+  UserId is valid : userid_113_12_2011_6270 , false
+  UserId is valid : userid_108_26_2000_7718 , false
+  UserId is valid : userid_120_3_2003_3281 , false
+  UserId is valid : userid_118_29_2003_4848 , false
+  
+  Invalid User Id Validation Test Completed
