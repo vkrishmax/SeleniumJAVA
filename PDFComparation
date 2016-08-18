@@ -1,0 +1,242 @@
+Comparing Pdf Documentations With Selenium
+
+Some web applications generate pdf files, so when automating tests, comparing pdf files at the run time is very important. In this example, I explain how to use Selenium Web Driver to compare two pdf files. We have two pdf files, which are stored on the web server. 
+
+http://www.seleniummaster.com/sitecontent/images/Selenium_Master_Test_Case_Base_Template.pdf
+
+http://www.seleniummaster.com/sitecontent/images/Selenium_Master_Test Case_Modified_Template.pdf
+
+The two pdf files above has a small differences. In the Modified_Template.pdf file, I inserted a time stamp at the very bottom of the modified pdf file, so the only different is the time stamp. 
+
+ 
+
+Selenium_Master_Test_Case_Base_Template.pdf	Selenium_Master_Test Case_Modified_Template.pdf
+Selenium Master Test Case Template
+
+
+
+Testing approach: use Selenium Web Driver to get the text content of the pdf files by using StreamReader and then using Google Match and Diff project to compare the output text string from both files. 
+
+Step 1: Create a Maven project name "SeleniumMasterPdfProject"  and add the two packages as highlighted below. 
+
+
+
+Step 2: add the following dependencies in the pom.xml file as highlighted below. This way, Maven automatically adds the references jar files for the project. 
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>SeleniumPdfProject</groupId>
+  <artifactId>SeleniumPdfProject</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>SeleniumPdfProject</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+    <groupId>org.apache.pdfbox</groupId>
+    <artifactId>pdfbox</artifactId>
+    <version>1.8.3</version>
+</dependency>
+<dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-java</artifactId>
+        <version>2.39.0</version>
+    </dependency>
+    <dependency>
+    <groupId>org.testng</groupId>
+    <artifactId>testng</artifactId>
+    <version>6.8.7</version>
+</dependency>
+  </dependencies>
+</project>
+Step 3: Add a class named "Diff_Match_Patch.java" and copy the following code in the java file. This file is from  Google Diff Match Patch project. You can download the project file from the Google link. 
+
+Since the code is very long, you can download (right click and select "save the link" as option to download) or view the file here. 
+
+ 
+
+Step 4: add a class named "ComparePdfFiles.java" and write the following code. 
+ 
+
+package com.seleniummaster.comparepdf;
+import com.google.diffmatchpatch.*;
+import java.io.BufferedInputStream;  
+import java.io.IOException;  
+import java.net.URL;  
+import java.util.concurrent.TimeUnit;  
+
+import org.apache.pdfbox.pdfparser.PDFParser;  
+import org.apache.pdfbox.util.PDFTextStripper;  
+import org.openqa.selenium.WebDriver;  
+import org.openqa.selenium.firefox.FirefoxDriver;  
+import org.testng.Assert;
+import org.testng.Reporter;  
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;  
+import org.testng.annotations.Test;  
+  
+public class ComparePdfFiles {  
+   
+ WebDriver driver;  
+   
+  @BeforeTest  
+  public void setUpDriver() {  
+   driver = new FirefoxDriver();  
+   Reporter.log("Web Driver Setup is complete");  
+     }  
+    
+@Test  
+  public void CompareTextInTwoPdfs() throws IOException
+  {
+    Diff_Match_Patch compare= new Diff_Match_Patch();
+    
+    String text1=ReadBaseTemplate();
+    String text2=ReadModifiedTemplate();
+   System.out.print(compare.diff_main(text1,text2)); 
+    
+  }
+  public String ReadBaseTemplate() throws IOException{  
+  driver.get("http://www.seleniummaster.com/sitecontent/images/Selenium_Master_Test_Case_Base_Template.pdf");  
+  driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);  
+  URL url = new URL(driver.getCurrentUrl());   
+  BufferedInputStream fileToParse=new BufferedInputStream(url.openStream());  
+   //parse()  --  This will parse the stream and populate the COSDocument object.   
+  //COSDocument object --  This is the in-memory representation of the PDF document  
+  PDFParser parser = new PDFParser(fileToParse);  
+  parser.parse();  
+  //getPDDocument() -- This will get the PD document that was parsed. When you are done with this document 
+  //you must call    close() on it to release resources  
+  //PDFTextStripper() -- This class will take a pdf document and strip out all of the text and ignore the formatting and           such.  
+  String output=new PDFTextStripper().getText(parser.getPDDocument());  
+  System.out.println(output);  
+  Assert.assertTrue(output.length()>0,"Text is extracted successfully");
+  parser.getPDDocument().close();   
+  Reporter.log("base template reading is done");  
+  driver.manage().timeouts().implicitlyWait(100, TimeUnit.SECONDS);  
+  return output;
+  } 
+  
+  public String ReadModifiedTemplate() throws IOException{  
+  driver.get("http://www.seleniummaster.com/sitecontent/images/Selenium_Master_Test Case_Modified_Template.pdf");  
+  driver.manage().timeouts().implicitlyWait(60, TimeUnit.SECONDS);  
+  URL url = new URL(driver.getCurrentUrl());   
+  BufferedInputStream fileToParse=new BufferedInputStream(url.openStream());  
+   //parse()  --  This will parse the stream and populate the COSDocument object.   
+  //COSDocument object --  This is the in-memory representation of the PDF document  
+  PDFParser parser = new PDFParser(fileToParse);  
+  parser.parse();  
+  //getPDDocument() -- This will get the PD document that was parsed. When you are done with this document 
+  //you must call    close() on it to release resources  
+  //PDFTextStripper() -- This class will take a pdf document and strip out all of the text and ignore the formatting and           such.  
+  String output=new PDFTextStripper().getText(parser.getPDDocument());  
+  System.out.println(output);  
+  Assert.assertTrue(output.length()>0,"Text is extracted successfully");
+  parser.getPDDocument().close();   
+  Reporter.log("modified template reading is done");  
+  driver.manage().timeouts().implicitlyWait(100, TimeUnit.SECONDS);  
+  return output;
+  }
+  
+  @AfterTest
+  public void teardown()
+  {
+    driver.quit();
+  }
+}  
+ Step 5: write the following code in the CustomLogging.java class to include custom logging in the TestNG result. This class should be under the package com.seleniummaster.customlogger package. 
+
+package com.seleniummaster.customlogger;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.testng.ITestContext;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+
+public class CustomLogging implements ITestListener
+
+{
+    //Called when the test-method execution starts  
+  public void onTestStart(ITestResult result) {
+    System.out.println("Test method started: "+ result.getName()+ " and time is: "+getCurrentTime());    
+  }
+  //Called when the test-method execution is a success
+  public void onTestSuccess(ITestResult result) {
+    System.out.println("Test method success: "+ result.getName()+ "  and time is: "+getCurrentTime());
+    
+  }
+  
+  //Called when the test-method execution fails
+  public void onTestFailure(ITestResult result) {
+    System.out.println("Test method failed: "+ result.getName()+ " and time is: "+getCurrentTime());
+    
+  }
+
+  //Called when the test-method is skipped
+  public void onTestSkipped(ITestResult result) {
+    System.out.println("Test method skipped: "+ result.getName()+ " and time is: "+getCurrentTime());    
+  }
+
+  //Called when the test-method fails within success percentage
+  public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
+    // Leaving blank
+    
+  }
+
+  //Called when the test in xml suite starts
+  public void onStart(ITestContext context) {
+    System.out.println("Test in a suite started: "+ context.getName()+ " and time is: "+getCurrentTime());
+    
+  }
+  //Called when the test in xml suite finishes
+  public void onFinish(ITestContext context) {
+    System.out.println("Test in a suite finished: "+ context.getName()+ " and time is: "+getCurrentTime());
+    
+  }
+  
+  //Returns the current time when the method is called
+  public String getCurrentTime(){
+    DateFormat dateFormat = 
+        new SimpleDateFormat("HH:mm:ss:SSS");
+    Date dt = new Date();
+    return dateFormat.format(dt);    
+  }
+}
+
+Step 6: write the following testng.xml  and run the test as TestNG Suite. 
+
+
+
+
+
+Step 7: view the result on the console and TestNG report. The test passed.  The console output showed that the difference is "1/21/2014" and the label is "INSERT". This means that if the difference is inserted in the base template, the documentations will match. 
+
+?"), Diff(INSERT,"1/21/2014 
+?")]Test method success: CompareTextInTwoPdfs and time is: 13:39:52:438
+Test in a suite finished: Selenium Master Pdf Comparison Test and time is: 13:39:52:810
+
+===============================================
+Simple Logger Suite
+Total tests run: 1, Failures: 0, Skips: 0
+===============================================
+
+
+
+ 
+
+If you need help for this type of project for comparing pdf content, please email to services@seleniummaster.com. 
