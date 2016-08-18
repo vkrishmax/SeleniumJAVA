@@ -1,0 +1,282 @@
+Write Selenium WebDriver TestNG Result to Excel File
+
+In this example you will learn how to use Selenium WebDriver with TestNG and write test result into an Excel file with Apache POI library. The key feature of the sample is that you use Selenium Java WebDriver that will launch a browser and run each test sequentially. Each test has description in the test methods. After test is done, you can see test result both in TestNG output html file and an Excel file as shown below.
+
+Test Step Id	Action	Expected Result	Actual Result
+1	navigate to site and login	site opens and login success	Pass
+2	navigate to User Settings Page	Page Displayed	Pass
+3	User can change settings	Settings changed	Pass
+4	User can logout	Logout successfull	Pass
+Model your test cases
+
+Before you start automation, you need to know what are the tests and what you are going to validate. Let's break the test suite into 4 test cases.
+
+Test 1 (launchSiteAndLogin)
+1. Go to http://www.seleniummaster.com/seleniummastertestapp/index.php
+2. Enter "test" in the Username field
+3. Enter "XXXX" in the Password filed
+4. Click on the Login button
+5. Verify that the text "Selenium Test" is present.
+
+Test 2 (openUserSettingPage)
+1. Click on the Settings link on the top of the page
+2. Enter "test" in the Username field
+3. Enter "XXXX" in the Password filed
+4. Click on the Login button
+5. Verify that Account Prefernces page displayed.
+
+Test 3 (ChangeUserSettings)
+
+1. Click on the radio button near friends need my authorization to add me
+2. Click on the save button
+3. Verify that the text "preference saved" displayed.
+
+Test4 (Logout)
+1. Click on the Logout button
+2. Verify that Login button displayed.
+
+Automation Implementation
+
+Step 1: Create a Java Project named "SeleniumMasterWebDriverTestNg", add a package named "com.seleniummaster.testsuite". In the build path, add the selenium-java-2.39.0.jar file and all the jar files under the lib folder as a reference. Add the TestNG class named UserSettingTest and add @BeforeClass and @AfterClass annotations. See the code in Step 2 for reference.
+
+You also need to add poi-3.9-20121203.jar (Apache poi jar) file in the Build Path as external JARs. 
+
+	
+Step 2: write the UserSettingTest.java code as follows
+
+package com.seleniummaster.testsuite;
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertTrue;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.Assert;
+import org.testng.ITestContext;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+public class UserSettingTest {
+  private WebDriver browser;
+  private String baseUrl;
+  //define an Excel Work Book
+  HSSFWorkbook workbook;
+  //define an Excel Work sheet
+  HSSFSheet sheet;
+  //define a test result data object
+  Map<String, Object[]> testresultdata;
+  
+  @Test(description="Launches the Selenium Master Test Application and Login")
+  public void launchSiteAndLogin() throws InterruptedException{
+    browser.get(baseUrl+"/seleniummastertestapp/index.php");
+     for (int second = 0;; second++) {
+          if (second >= 60) Assert.fail("timeout");
+          try { if (isElementPresent(By.cssSelector("img[alt=\"Selenium Master\"]"))) 
+            break; } catch (Exception e) {}
+          Thread.sleep(1000);
+        }
+     browser.findElement(By.id("login_login_username")).clear();
+     browser.findElement(By.id("login_login_username")).sendKeys("test");
+     browser.findElement(By.id("login_login_password")).clear();
+     browser.findElement(By.id("login_login_password")).sendKeys("XXXXX"); //password is omitted
+     browser.findElement(By.id("login_submit")).click();
+    try{
+      assertEquals(browser.findElement(By.cssSelector("ul.cr > li > a")).getText(),"Test Selenium");
+      //add pass entry to the excel sheet
+      testresultdata.put("2", new Object[] {1d, "navigate to site and login", "site opens and login success","Pass"});
+    }
+    
+    catch(Exception e)
+    {
+      //add fail entry to the excel sheet
+      testresultdata.put("2", new Object[] {1d, "navigate to site and login", "site opens and login success","Fail"});
+    }
+  }
+    
+  @Test(description="Navigates to the User Settings page")
+    public void openUserSettingPage() throws InterruptedException {
+    browser.findElement(By.linkText("Settings")).click();
+    
+     for (int second = 0;; second++) {
+          if (second >= 60) Assert.fail("timeout");
+          try { if (isElementPresent(By.id("login_login_username"))) 
+            break; } catch (Exception e) {}
+          Thread.sleep(1000);
+        }
+    
+     browser.findElement(By.id("login_login_username")).clear();
+     browser.findElement(By.id("login_login_username")).sendKeys("test");
+     browser.findElement(By.id("login_login_password")).clear();
+     browser.findElement(By.id("login_login_password")).sendKeys("XXXX");//password is omitted
+     browser.findElement(By.id("login_submit")).click();
+    
+     for (int second = 0;; second++) {
+          if (second >= 60) Assert.fail("timeout");
+          try { if (isElementPresent(By.xpath("//input[@value='auth']"))) 
+            break; } catch (Exception e) {}
+          Thread.sleep(1000);
+        }
+    
+     try{
+       assertTrue(isElementPresent(By.xpath("//input[@value='auth']")));
+      //add pass entry to the excel sheet
+        testresultdata.put("3", new Object[] {2d, "navigate to User Settings Page", "Page Displayed","Pass"});
+      }
+      
+      catch(Exception e)
+      {
+        //add fail entry to the excel sheet
+        testresultdata.put("3", new Object[] {2d, "navigate to User Settings Page", "Page Not Displayed","Fail"});
+      }
+    
+    
+  }
+    
+  @Test(description="Change a User settings to add as a friends after authorization")
+    public void ChangeUserSettings() {
+    browser.findElement(By.xpath("//input[@value='auth']")).click();
+    browser.findElement(By.id("accountprefs_submit")).click();
+    try{
+      assertEquals(browser.findElement(By.cssSelector("div.ok")).getText(), "Preferences saved");
+      //add pass entry to the excel sheet
+        testresultdata.put("4", new Object[] {3d, "User can change settings", "Settings changed","Pass"});
+      }
+      
+      catch(Exception e)
+      {
+        //add fail entry to the excel sheet
+        testresultdata.put("4", new Object[] {3d, "User can change settings", "Settings NOT changed","Fail"});
+      }
+    
+  }
+   
+  @Test(description="Log out the system")
+  public void Logout() throws InterruptedException {
+    for (int second = 0;; second++) {
+        if (second >= 60) Assert.fail("timeout");
+        try { if (isElementPresent(By.linkText("Logout"))) 
+          break; } catch (Exception e) {}
+        Thread.sleep(1000);
+      }
+    browser.findElement(By.linkText("Logout")).click();
+    try{
+      assertTrue(isElementPresent(By.id("login_login_username")));
+      //add pass entry to the excel sheet
+      testresultdata.put("5", new Object[] {4d, "User can logout", "Logout successfull","Pass"});
+      }
+      
+      catch(Exception e)
+      {
+        //add fail entry to the excel sheet
+        testresultdata.put("5", new Object[] {4d, "User can logout", "Logout successfull","Fail"});
+      }
+    
+  }
+
+  @BeforeClass(alwaysRun = true)
+  public void setupBeforeSuite(ITestContext context) {
+     baseUrl = "http://www.seleniummaster.com";
+     //create a new work book
+      workbook = new HSSFWorkbook();
+      //create a new work sheet
+       sheet = workbook.createSheet("Test Result");
+      testresultdata = new LinkedHashMap<String, Object[]>();
+      //add test result excel file column header
+      //write the header in the first row
+      testresultdata.put("1", new Object[] {"Test Step Id", "Action", "Expected Result","Actual Result"});
+      
+    try {
+      
+     browser=new FirefoxDriver();
+     browser.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+     } catch (Exception e) {
+      throw new IllegalStateException("Can't start Web Driver", e);
+    }
+    
+  }
+  @AfterClass
+  public void setupAfterSuite() {
+    //write excel file and file name is TestResult.xls 
+    Set<String> keyset = testresultdata.keySet();
+    int rownum = 0;
+    for (String key : keyset) {
+        Row row = sheet.createRow(rownum++);
+        Object [] objArr = testresultdata.get(key);
+        int cellnum = 0;
+        for (Object obj : objArr) {
+            Cell cell = row.createCell(cellnum++);
+            if(obj instanceof Date) 
+                cell.setCellValue((Date)obj);
+            else if(obj instanceof Boolean)
+                cell.setCellValue((Boolean)obj);
+            else if(obj instanceof String)
+                cell.setCellValue((String)obj);
+            else if(obj instanceof Double)
+                cell.setCellValue((Double)obj);
+        }
+    }
+    try {
+        FileOutputStream out =new FileOutputStream(new File("TestResult.xls"));
+        workbook.write(out);
+        out.close();
+        System.out.println("Excel written successfully..");
+         
+    } catch (FileNotFoundException e) {
+        e.printStackTrace();
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+    //close the browser
+    browser.close();
+    browser.quit();
+  }
+  
+    private boolean isElementPresent(By by) {
+        try {
+          browser.findElement(by);
+          return true;
+        } catch (NoSuchElementException e) {
+          return false;
+        }
+      }
+}
+
+ Step 3: Create a testng.xml file to run the test suite as TestNG Suite.
+
+
+
+Step 4: right click on the testng.xml file and select run as TestNG Suite.
+
+ 
+
+
+
+ 
+
+Step 5: Check the test result on the console or in the test-output folder. Generally, open the index.html under the test-output folder to view the result.
+
+
+
+The result file indicated that all the tests passed. With this pattern, you can expand the test suite with many test modules.You can also see the TestResult.xls file to view the test result. When you open the excel file, you will see the test result as shown below. 
+
+Test Step Id	Action	Expected Result	Actual Result
+1	navigate to site and login	site opens and login success	Pass
+2	navigate to User Settings Page	Page Displayed	Pass
+3	User can change settings	Settings changed	Pass
+4	User can logout	Logout successfull	Pass
+ 
