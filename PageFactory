@@ -1,0 +1,224 @@
+Using Page Factory in Selenium Web Driver
+
+Using Page Factory in Selenium web test automation makes the test easy to manage by defining page object.  In another words, Page Object model is a pattern that displays user interface as a class. In addition to user interface, functionality of the page is also described in this class. The page will be utilized in the test class. In actual implementation, we follow the workflows. 
+
+1. First define some page element fields on a PageObject class. These should be WebElements or List of Web Elements. 
+
+2. Second, define some functionality of the page as method. 
+
+3. Third, in the test class, we need to initialize the PageObject and use its methods.   
+
+In this example below, we verify the test case below. 
+
+Test Case:
+
+Authorized users should be able to change "Maximum Tags in Cloud" in Mahara Demo Site after logging in. 
+
+Implementation
+
+Step 1. create a java project "SeleniumMasterPageFactory", add a package "com.seleniummaster.pagefactory.example", add 3 page classes "LoginPage", "DashboardPage","SettingsPage" , and 1 TestNG class "TestRunner" with testng.xml file. Here is the screenshot of the project. 
+
+
+
+Step 2: write the code in each class file 
+
+LoginPage.java
+
+package com.seleniummaster.pagefactory.example;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.How;
+
+public class LoginPage {
+
+	//Define User name Field
+	@FindBy(how=How.ID, using="login_login_username")
+	private WebElement usernameField;
+	
+	//Define Password Field
+	@FindBy(how=How.ID, using="login_login_password")
+	private WebElement passwordField;
+	
+	//Define Login Button
+	@FindBy(how=How.ID, using="login_submit")
+	private WebElement loginButton;
+	
+	//Define User name Enter Method
+	public void EnterUserName(String usernametext)
+	{
+		usernameField.sendKeys(usernametext);
+	}
+	
+	//Define Password Enter Method
+		public void EnterPassword(String passwordtext)
+		{
+			passwordField.sendKeys(passwordtext);
+		}
+		
+	//Define Login Button Click Method
+		public void ClickLoginButton()
+		{
+			loginButton.click();
+		}
+	
+}
+
+DashboardPage.java
+
+package com.seleniummaster.pagefactory.example;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.How;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+public class DashboardPage {
+
+//Define Settings Link
+@FindBy(how=How.XPATH, using="//div[@id='right-nav']//a[contains(text(),'Settings')]")
+private WebElement settingLink;
+
+//Define Click Settings Method
+public void ClickSettings()
+{
+	settingLink.click();
+}
+//Define Wait
+public void WaitForSettingLinkToDisplay(WebDriver webDriver)
+{
+	WebDriverWait wait=new WebDriverWait(webDriver, 60, 1000);
+	wait.until(ExpectedConditions.visibilityOf(settingLink));
+}
+
+
+}
+
+SettingsPage.java
+
+package com.seleniummaster.pagefactory.example;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.How;
+
+public class SettingsPage {
+	
+//Define Maximum tags in cloud check box
+@FindBy(how=How.ID,using="accountprefs_tagssideblockmaxtags")
+private WebElement maximumTagsInCloud;
+
+//Define Save Button
+@FindBy(how=How.ID,using="accountprefs_submit")
+private WebElement saveButton;
+
+//Define Preference saved text
+@FindBy(how=How.XPATH,using="//div[contains(text(),'Preferences saved']")
+private WebElement preferenceSavedMessage;
+
+//Define Logout Link
+@FindBy(how=How.LINK_TEXT,using="Logout")
+private WebElement logoutLink;
+
+//Define Click Save Button Method
+public void ClickSave()
+{
+	saveButton.click();
+}
+
+//Define Maximum tags in Cloud Enter Number Method
+public void EnterMaximumTagsInCloud(String inputNumber)
+{
+	maximumTagsInCloud.sendKeys(inputNumber);
+}
+//Define preference saved confirmation 
+public boolean VerifyPreferenceSavedMessage()
+{
+	return preferenceSavedMessage.isDisplayed();
+}
+
+//Define logout click method
+public void ClickLogout()
+{
+	logoutLink.clear();
+}
+}
+TestRunner.java
+
+package com.seleniummaster.pagefactory.example;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.support.PageFactory;
+import org.testng.annotations.Test;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterClass;
+
+import static org.testng.AssertJUnit.assertTrue;
+
+public class TestRunner {
+private WebDriver driver;
+
+  
+  @BeforeClass
+  public void beforeClass() {
+ driver=new FirefoxDriver();
+ driver.navigate().to("http://demo.mahara.org");
+ driver.manage().window().maximize();
+ }
+
+  @Test
+  public void LoginTest() {
+	  //Initialize Login Page
+  LoginPage loginPage=PageFactory.initElements(driver, LoginPage.class);
+  //Enter user name
+  loginPage.EnterUserName("student1");
+  //Enter Password
+  loginPage.EnterPassword("Testing1");
+  //Click Login Button
+  loginPage.ClickLoginButton();
+  }
+  
+  @Test
+  public void DashboardTest() throws InterruptedException
+  {
+Thread.sleep(5000);
+//Initialize Dashboard Page
+DashboardPage dashboardPage=PageFactory.initElements(driver, DashboardPage.class);
+//Wait for settings link
+dashboardPage.WaitForSettingLinkToDisplay(driver);
+//Click on Settings
+dashboardPage.ClickSettings();
+  }
+  
+  @Test
+  public void UserSettingsTest() throws InterruptedException
+  {
+	  Thread.sleep(5000);
+	  //Initialize User Settings Page
+	SettingsPage settingsPage=PageFactory.initElements(driver, SettingsPage.class);
+	//Enter Maximum Tags in Cloud Number
+	settingsPage.EnterMaximumTagsInCloud("40");
+	//Click Save
+	settingsPage.ClickSave();
+	//Verify Preference Saved Message
+	assertTrue(settingsPage.VerifyPreferenceSavedMessage());
+	//Click Logout link
+	settingsPage.ClickLogout();
+  }
+  
+  @AfterClass
+  public void afterClass() {
+//Close the browser
+driver.close();
+driver.quit();
+  }
+
+}
+
+testng.xml
+
+
+
+Run the test as TestNG Suite
