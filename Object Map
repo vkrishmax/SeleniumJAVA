@@ -1,0 +1,152 @@
+Using Object Map in Selenium Web Driver Automation
+
+In Selenium test automation, defining web page objects in a central place is very important and helpful to maintain the application for any kind of UI changes over time. In this example, we will create an Object Map for Selenium Login Test. We will create a properties file named "objectmap.properties" under a folder named "ObjectPropertiesFile" and store all the page element object definition in this file. When tests are running, the test application reads object locator type and locator value from the file and interact with the web elements. 
+
+ Login Test Case:
+
+1. Go to http://www.seleniummaster.com/seleniummastertestapp/index.php
+2. Enter "test" in the Username field
+3. Enter "XXXX" in the Password filed
+4. Click on the Login button
+5. Verify that the text "Selenium Test" is present.
+
+Step 1: on Java Eclipse, create a project named "SeleniumMasterObjectMap" and add the two classes below. Make sure add Selenium Java webdriver jar files as references in the project build path. 
+
+(1) ObjectMap.java
+
+(2) ObjectMapLoginTest.java (TestNG Class)
+
+and also create a folder named "ObjectPropertiesFile" and add a file named "objectmap.properties". 
+
+
+
+Step 2: write the following code in the ObjectMap.java class
+
+ 
+
+package com.seleniummaster.ObjectMapProject;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+import org.openqa.selenium.By;
+
+/*
+Creating an object map for Selenium tests
+1) We will create a properties file named "objectmap.properties".
+Format :  [logical_name]=[locator_type]:[locator_value]
+                 
+                 Username_field = id:login_login_username
+        Password_field = id:login_login_password
+        Login_button = id:login_submit
+        online_user=cssSelector:#sb-onlineusers > h3
+        
+*/
+
+public class ObjectMap {
+  
+  //property file and provide the locator information to the test.
+  
+  Properties properties;
+  
+  public ObjectMap(String mapFile)
+  {
+      properties = new Properties();
+      try {
+      FileInputStream Master = new FileInputStream(mapFile);
+      properties.load(Master);
+      Master.close();
+          }catch (IOException e) {
+            System.out.println(e.getMessage());
+         }
+      }
+
+
+   public By getLocator(String ElementName) throws Exception {
+         //Read value using the logical name as Key
+         String locator = properties.getProperty(ElementName);
+         //Split the value which contains locator type and locator value
+         String locatorType = locator.split(":")[0];
+         String locatorValue = locator.split(":")[1];
+         //Return a instance of By class based on type of locator
+           if(locatorType.toLowerCase().equals("id"))
+                 return By.id(locatorValue);
+           else if(locatorType.toLowerCase().equals("name"))
+                 return By.name(locatorValue);
+           else if((locatorType.toLowerCase().equals("classname")) || (locatorType.toLowerCase().equals("class")))
+                 return By.className(locatorValue);
+           else if((locatorType.toLowerCase().equals("tagname")) || (locatorType.toLowerCase().equals("tag")))
+                 return By.className(locatorValue);
+           else if((locatorType.toLowerCase().equals("linktext")) || (locatorType.toLowerCase().equals("link")))
+                 return By.linkText(locatorValue);
+           else if(locatorType.toLowerCase().equals("partiallinktext"))
+                 return By.partialLinkText(locatorValue);
+           else if((locatorType.toLowerCase().equals("cssselector")) || (locatorType.toLowerCase().equals("css")))
+                 return By.cssSelector(locatorValue);
+           else if(locatorType.toLowerCase().equals("xpath"))
+                 return By.xpath(locatorValue);
+           else
+                   throw new Exception("Locator type '" + locatorType + "' not defined!!");
+         }
+}
+Step 3: write the following code in the ObjectMapLoginTest.java
+
+package com.seleniummaster.ObjectMapProject;
+import static org.testng.AssertJUnit.assertEquals;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+import org.openqa.selenium.WebElement;
+
+public class ObjectMapLoginTest {
+  public WebDriver driver;
+  public ObjectMap objmap;
+  
+  @BeforeTest
+  public void setUp() throws Exception {
+  // Create a new instance of the Firefox driver
+  driver = new FirefoxDriver();
+  driver.get("http://www.seleniummaster.com/seleniummastertestapp/index.php");
+  Thread.sleep(3000);
+  }
+  
+  @Test
+  public void login() throws Exception{
+    
+    //Get current working directory
+    String workingDir=System.getProperty("user.dir");
+    //Get object map file
+     objmap = new ObjectMap (workingDir+"\\objectpropertiesfile\\objectmap.properties");
+      //Get the username element
+     WebElement username = driver.findElement(objmap.getLocator("Username_field"));
+     username.sendKeys("test");
+    //Get the password element
+     WebElement password = driver.findElement(objmap.getLocator("Password_field"));
+     password.sendKeys("XXXXXX");//password is omitted
+    //Click on the login button
+     WebElement login = driver.findElement(objmap.getLocator("Login_button"));
+     login.click();
+     Thread.sleep(3000);
+     //Assert the user login by checking the Online user
+     WebElement onlineuser=driver.findElement(objmap.getLocator("online_user"));
+     assertEquals("Online users", onlineuser.getText());
+     
+  }
+    
+  @AfterTest
+  public void tearDown() throws Exception {
+             //Close the browser
+              driver.quit();
+       }
+}
+Step 4: add the content below to the objectmap.properties file
+
+Username_field =id:login_login_username
+Password_field =id:login_login_password
+Login_button =id:login_submit
+online_user=cssSelector:#sb-onlineusers > h3
+
+Step 5: right click on the ObjectMapLoginTest.java class and select Run As "TestNG Test" command. 
+
+Step 6: verify test result on the console or in the test-output folder. The console below shows that the test passed. test-output folder should be located under the project folder
