@@ -1,0 +1,170 @@
+Selenium Web Driver with TestNG in Java
+
+In this example you will learn how to use Selenium WebDriver with TestNG. The key feature of the sample is that you use Selenium Java WebDriver that will launch a browser and run each test sequencially. Each test has description in the test methods. 
+
+Model your test cases 
+
+Before you start automation, you need to know what are the tests and what you are going to validate. Let's break the test suite into 4 test cases. 
+
+Test 1 (launchSiteAndLogin)
+1. Go to http://www.seleniummaster.com/seleniummastertestapp/index.php
+2. Enter "test" in the Username field
+3. Enter "XXXX" in the Password filed
+4. Click on the Login button
+5. Verify that the text "Selenium Test" is present.
+
+Test 2 (openUserSettingPage)
+1. Click on the Settings link on the top of the page
+2. Enter "test" in the Username field
+3. Enter "XXXX" in the Password filed
+4. Click on the Login button
+5. Verify that Account Prefernces page displayed.
+
+Test 3 (ChangeUserSettings)
+1. Click on the radio button near friends need my authorization to add me
+2. Click on the save button
+3. Verify that the text "preference saved" displayed.
+
+Test4 (Logout)
+1. Click on the Logout button
+2. Verify that Login button displayed.
+
+Automation Implementaion
+
+ 
+
+Step 1: Create a Java Project named "SeleniumMasterWebDriverTestNg", add a package named "com.seleniummaster.testsuite". In the build path, add the selenium-java-2.39.0.jar file and all the jar files under the lib folder as a reference. Add the TestNG class named UserSettingTest and add @BeforeClass and @AfterClass annotations. See the code in Step 2 for reference. 
+
+	
+Step 2: write the UserSettingTest.java code as follows
+
+ 
+
+package com.seleniummaster.testsuite;
+import static org.testng.AssertJUnit.assertTrue;
+import static org.testng.AssertJUnit.assertEquals;
+
+import java.util.concurrent.TimeUnit;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.Assert;
+import org.testng.ITestContext;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.AfterSuite;
+public class UserSettingTest {
+  private WebDriver browser;
+  private String baseUrl;
+  
+  @Test(description="Launches the Selenium Master Test Application and Login")
+  public void launchSiteAndLogin() throws InterruptedException{
+    browser.get(baseUrl+"/seleniummastertestapp/index.php");
+     for (int second = 0;; second++) {
+          if (second >= 60) Assert.fail("timeout");
+          try { if (isElementPresent(By.cssSelector("img[alt=\"Selenium Master\"]"))) 
+            break; } catch (Exception e) {}
+          Thread.sleep(1000);
+        }
+     browser.findElement(By.id("login_login_username")).clear();
+     browser.findElement(By.id("login_login_username")).sendKeys("test");
+     browser.findElement(By.id("login_login_password")).clear();
+     browser.findElement(By.id("login_login_password")).sendKeys("XXXX"); //password is omitted
+     browser.findElement(By.id("login_submit")).click();
+    assertEquals(browser.findElement(By.cssSelector("ul.cr > li > a")).getText(),"Test Selenium");
+  }
+    
+  @Test(description="Navigates to the User Settings page")
+    public void openUserSettingPage() throws InterruptedException {
+    browser.findElement(By.linkText("Settings")).click();
+    
+     for (int second = 0;; second++) {
+          if (second >= 60) Assert.fail("timeout");
+          try { if (isElementPresent(By.id("login_login_username"))) 
+            break; } catch (Exception e) {}
+          Thread.sleep(1000);
+        }
+    
+     browser.findElement(By.id("login_login_username")).clear();
+     browser.findElement(By.id("login_login_username")).sendKeys("test");
+     browser.findElement(By.id("login_login_password")).clear();
+     browser.findElement(By.id("login_login_password")).sendKeys("XXXXX");//password is omitted
+     browser.findElement(By.id("login_submit")).click();
+    
+     for (int second = 0;; second++) {
+          if (second >= 60) Assert.fail("timeout");
+          try { if (isElementPresent(By.xpath("//input[@value='auth']"))) 
+            break; } catch (Exception e) {}
+          Thread.sleep(1000);
+        }
+    
+    assertTrue(isElementPresent(By.xpath("//input[@value='auth']")));
+    
+  }
+    
+  @Test(description="Change a User settings to add as a friends after authorization")
+    public void ChangeUserSettings() {
+    browser.findElement(By.xpath("//input[@value='auth']")).click();
+    browser.findElement(By.id("accountprefs_submit")).click();
+    assertEquals(browser.findElement(By.cssSelector("div.ok")).getText(), "Preferences saved");
+  }
+   
+  @Test(description="Log out the system")
+  public void Logout() throws InterruptedException {
+    for (int second = 0;; second++) {
+        if (second >= 60) Assert.fail("timeout");
+        try { if (isElementPresent(By.linkText("Logout"))) 
+          break; } catch (Exception e) {}
+        Thread.sleep(1000);
+      }
+    browser.findElement(By.linkText("Logout")).click();
+    assertTrue(isElementPresent(By.id("login_login_username")));
+  }
+
+  @BeforeClass(alwaysRun = true)
+  public void setupBeforeSuite(ITestContext context) {
+     baseUrl = "http://www.seleniummaster.com";
+      
+    try {
+      
+     browser=new FirefoxDriver();
+     browser.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+     } catch (Exception e) {
+      throw new IllegalStateException("Can't start Web Driver", e);
+    }
+    
+  }
+  @AfterClass
+  public void setupAfterSuite() {
+    browser.close();
+    browser.quit();
+  }
+  
+    private boolean isElementPresent(By by) {
+        try {
+          browser.findElement(by);
+          return true;
+        } catch (NoSuchElementException e) {
+          return false;
+        }
+      }
+}
+Step 3: Create a testng.xml file to run the test suite as TestNG Suite. 
+
+
+
+Step 4: right click on the testng.xml file and select run as TestNG Suite. 
+
+
+
+ 
+
+Step 5: Check the test result on the console or in the test-output folder. Generally, open the index.html under the test-output folder to view the result. 
+
+
+
+The result file indicated that all the tests passed. With this pattern, you can expand the test suite with many test modules. 
