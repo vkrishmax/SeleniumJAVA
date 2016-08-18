@@ -1,0 +1,212 @@
+How to Generate PDF Report in Selenium WebDriver
+
+In some cases, test engineers need to export or save Selenium WebDriver test result in Pdf file format.  In this example below, I will explain how to write test results as a pdf file. 
+
+Login Test Case:
+
+1. Go to http://www.seleniummaster.com/seleniummastertestapp/index.php
+2. Enter "test" in the Username field
+3. Enter "XXXX" in the Password filed
+4. Click on the Login button
+5. Verify that the text "Selenium Test" is present.
+
+Step 1: on Eclipse, create a Java Project called SeleniumMasterLoginTestPdfExport. Add a package named com.seleniummaster.testresultpdfproject and then add two classes:
+
+LoginTest class (this is a TestNG class)
+PdfUtility class
+and also, in the build path, add Selenium libraries and Apache Pdfbox library as reference jar files. 
+
+
+
+Step 2: open PdfUtility.java file and write the code below
+
+ 
+
+ 
+
+package com.seleniummaster.testresultpdfproject;
+import java.io.IOException;
+import java.util.List;
+import org.apache.pdfbox.exceptions.COSVisitorException;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.edit.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+
+public class PdfUtility {
+//define a Pdf Document variable named doc
+ private PDDocument doc;
+ //function to write test results to pdf file with file name and list of test cases
+ public void WriteTestResultToPdfFile(String fileName,List<String> testCase) throws IOException, COSVisitorException
+ {
+     try
+  {
+      //create a new  pdf document
+    doc = new PDDocument();
+    //create a new pdf page
+      PDPage page = new PDPage();
+      //set font for the pdf
+      PDFont font=PDType1Font.HELVETICA;
+      //set fontsize=12
+    int  fontSize=12;
+    //add page to the pdf document
+      doc.addPage(page);
+      //create a new content stream that will be written to the pdf file
+      PDPageContentStream contentStream = new PDPageContentStream(doc, page);
+      //define cursor position
+         float x=10;
+      float y=750;
+      //if there is no test case string, return nothing    
+          if (testCase.size() == 0) { return; }
+          //get number of test case lines
+          final int numberOfLines = testCase.size();
+          //get fontHeight
+          final float fontHeight = font.getFontDescriptor().getFontBoundingBox().getHeight()/1000 * fontSize;
+          //set font to use in the content stream
+          contentStream.setFont(font, fontSize);
+          //set content stream begin
+          contentStream.beginText();
+          //move content stream cursor position to (x,y)
+          contentStream.moveTextPositionByAmount( x, y);
+          //add a new row with the fontHeight
+          contentStream.appendRawCommands(fontHeight + " TL\n");
+          //loop through all the lines in the test case list
+          for (int i = 0; i < numberOfLines; i++) {
+            contentStream.drawString(testCase.get(i).toString());
+            //when current line is not end of the line, change the line, so content will be written to the next line
+            if (i < numberOfLines - 1) {
+              contentStream.appendRawCommands("T*\n");
+            }
+          }
+          //end content stream
+          contentStream.endText();
+          //close content stream
+         contentStream.close();
+         //write the pdf file
+      doc.save(fileName);
+  }
+  finally
+  {
+      //finally close the pdf document
+    if (doc != null)
+      {
+          doc.close();
+      }
+  }
+}
+}
+Step 3: open the LoginTest.java file and write the code below
+
+package com.seleniummaster.testresultpdfproject;
+import static org.testng.AssertJUnit.assertEquals;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import org.apache.pdfbox.exceptions.COSVisitorException;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+public class LoginTest {
+//define a WebDriver named driver
+ private WebDriver driver;
+ //create a resultList that will contain number of test cases
+ List<String> resultList=new ArrayList<String>();
+ //create an instance of PdfUtilityClass
+ PdfUtility pdfUtility=new PdfUtility();
+ //login test
+  @Test
+  public void SeleniumMasterLoginTest() {
+{
+      //open login page
+        driver.navigate().to("http://www.seleniummaster.com/seleniummastertestapp/index.php");
+        //maximize the window
+      driver.manage().window().maximize();
+      //type in user name 
+      driver.findElement(By.id("login_login_username")).sendKeys("test");
+      //type in user password
+      driver.findElement(By.id("login_login_password")).sendKeys("XXXXXX"); //here password is omitted
+      //click on the submit button
+     driver.findElement(By.id("login_submit")).click();
+     //within 60 seconds try asserting that user logged on
+       for (int second = 0;; second++) {
+        if (second >= 60) Assert.fail("timeout");
+        try { 
+          assertEquals("Online users", driver.findElement(By.cssSelector("#sb-onlineusers > h3")).getText());
+          //add test case to the resultList as pass
+          resultList.add("2, Login to the site,User should be able to login, User logged in, Pass");
+          break; } 
+        catch (Exception e) {
+          //add test case to the resultList as fail
+          resultList.add("2, Login to the site,User should be able to login, User did not logged in, Fail");
+        }
+           }
+         
+      }
+  }
+  @BeforeMethod
+  public void Setup() {
+//add test result header information to the resultList
+resultList.add("Step Id, Action,Expected Result, Actual Result, Test Result");
+try
+{
+  //initialize Firefox driver
+  driver=new FirefoxDriver();
+  //obtain windows handler name
+  String windowsHandle=driver.getWindowHandle();
+  //assert that a window has been launched
+  assertEquals(true, windowsHandle.length()>0);
+  //add a test step string to the resultList as pass after assertion true
+  resultList.add("1, Open Browser,Browser should open, Browser Opened, Pass");
+}
+catch(Exception e)
+{
+  //add a test step string to the resultList as fail after assertion true
+  resultList.add("1, Open Browser,Browser should open, Browser NOT Opened, Fail");  
+}
+ 
+   }
+
+  @AfterMethod
+  public void TearDown() throws COSVisitorException, IOException {
+  //close the driver
+ driver.close();
+ //define a time stamp string to add to the test result 
+ String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+ //add time stamp to the resultList
+ resultList.add("Test Ends: " + timeStamp);
+ //write the test result pdf file with file name TestResult
+  pdfUtility.WriteTestResultToPdfFile("TestResult.pdf", resultList); 
+  //quit the driver
+ driver.quit();
+  }
+
+}
+Step 4: right click on the testng.xml file and run as TestNG Suite. 
+
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="Suite" parallel="false">
+<test name="LoginTest">
+<classes>
+<class name="com.seleniummaster.testresultpdfproject.LoginTest"/>
+</classes>
+</test> <!-- Test -->
+</suite> <!-- Suite -->
+
+ 
+
+ 
+
+Step 5: in the project folder, you will see a test result pdf file named "TestResult.pdf".  The file contains following contents. 
+
+
+
+ 
+
+If you need more information about creating pdf files, please visit Apache Pdfbox tutorial page. 
