@@ -20,7 +20,7 @@ public class karuda
  
    PyInstance createClass( final String className, final String opts)
    {
-      return (PyInstance) this.interpreter.eval(className + "(" + opts + ")");
+      return (PyInstance) this.interpreter.eval(className + "('" + opts + "')");
    }
  
    public static void main( String gargs[] )
