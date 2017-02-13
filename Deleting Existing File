@@ -1,0 +1,33 @@
+public void dd() {
+
+		// Delete all files from this directory
+		String targetDirectory = "./export";
+		File dir = new File(targetDirectory);
+
+		// Filter out all log files
+		String[] logFiles = dir.list(new LogFilterFilter());
+		String[] logFiles1 = dir.list(new LogFilterFilterxls());
+
+		// If no log file found; no need to go further
+		if (logFiles.length == 0 && logFiles1.length == 0)
+			return;
+
+		// This code will delete all log files one by one
+		for (String log : logFiles) {
+			String tempLogFile = new StringBuffer(targetDirectory)
+					.append(File.separator).append(log).toString();
+			File fileDelete = new File(tempLogFile);
+			boolean isdeleted = fileDelete.delete();
+			System.out.println("file : " + tempLogFile + " is deleted : "
+					+ isdeleted);
+		}
+		for (String log : logFiles1) {
+			String tempLogFile = new StringBuffer(targetDirectory)
+					.append(File.separator).append(log).toString();
+			File fileDelete = new File(tempLogFile);
+			boolean isdeleted = fileDelete.delete();
+			System.out.println("file : " + tempLogFile + " is deleted : "
+					+ isdeleted);
+		}
+
+	}
