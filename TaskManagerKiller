@@ -1,0 +1,28 @@
+public static boolean isProcessRunning(String serviceName)	 throws Exception {
+		Process p = Runtime.getRuntime().exec(TASKLIST);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(
+				p.getInputStream()));
+		String line;
+		while ((line = reader.readLine()) != null) { 
+			System.out.println(line);
+			if (line.contains(serviceName)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static void killProcess(String serviceName) throws Exception {
+		Runtime.getRuntime().exec(KILL + serviceName);
+	}
+
+	public static void kill(String Name) {
+		try {
+			String processName = Name;
+			// System.out.print(isProcessRunning(processName));
+			if (isProcessRunning(processName)) {
+				killProcess(processName);
+			}
+		} catch (Exception e) {
+		}
+	}
