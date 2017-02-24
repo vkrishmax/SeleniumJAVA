@@ -1,0 +1,79 @@
+import java.util.concurrent.TimeUnit;
+import org.testng.annotations.*;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.Select;
+
+public class HandleDatePicker {
+  private WebDriver driver;
+  private String baseUrl;
+
+
+  @BeforeClass
+  public void setUp() throws Exception {
+ System.setProperty("webdriver.chrome.driver", "D:/Sudharsan/Official/Selenium  jars/chromedriver.exe");
+ driver = new ChromeDriver();
+    baseUrl = "http://jqueryui.com/datepicker/";
+    driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+    driver.manage().window().maximize();
+  }
+
+  @Test
+  public void testUntitled() throws Exception {
+    driver.manage().timeouts().implicitlyWait(30, TimeUnit.SECONDS);
+    driver.get(baseUrl + "/or");
+    driver.findElement(By.cssSelector("span.form-hint")).click();
+    driver.findElement(By.id("txtUsername")).clear();
+    driver.findElement(By.id("txtUsername")).sendKeys("Admin");
+    driver.findElement(By.id("txtPassword")).clear();
+    driver.findElement(By.id("txtPassword")).sendKeys("admin");
+    driver.findElement(By.id("btnLogin")).click();
+    Thread.sleep(5000);
+    driver.findElement(By.xpath("//b[contains(.,'Leave')]")).click();
+
+    //selecting date with different formats you can give with any one following
+    selectDate("23 Jun 1991");
+
+    //selectDate("23-06-1991");
+    //selectDate("23/Jun/1991");
+    //selectDate("23/06/1991");
+    //selectDate("23 Jun 1991");
+
+  }
+
+  //Reusable Method for Selecting Date
+  public void selectDate(String format){
+   driver.findElement(By.className("ui-datepicker-trigger")).click();
+
+   //identifying format
+   String date[] = null;
+   if(format.contains("-")){
+     date =format.split("-");
+   }
+   else if(format.contains("/")){
+      date =format.split("/");
+   }
+   else if(format.contains(" ")){
+      date =format.split(" ");
+   }
+   //Splitting data
+   String day=date[0];
+   String month=date[1];
+   String year=date[2];
+
+   //Selecting data based on format
+   if(month.length()==2){
+    //selecting month if you are giving input format as dd-mm-yyyy
+    new Select(driver.findElement(By.className("ui-datepicker-month"))).selectByIndex(Integer.parseInt(month)-1);
+   }
+   else if(month.length()!=2){
+  //selecting month if you are giving input format as dd-mmm-yyyy
+    new Select(driver.findElement(By.className("ui-datepicker-month"))).selectByVisibleText(month);
+   }
+   //selecting year
+   new Select(driver.findElement(By.xpath("//select[@class='ui-datepicker-year']"))).selectByVisibleText(year);
+
+    //click on day
+    driver.findElement(By.linkText(day)).click();
+     }
+}
