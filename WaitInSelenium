@@ -1,0 +1,61 @@
+I never expected ExpectedConditions
+I was having a brief trawl through the Selenium codebase and noticed something I hadn’t seen before. An ExpectedConditions class which exposes a bunch of static methods to save me having to write code.
+
+And it does save me having to write code.
+
+For example in the past I would have written something like this:
+
+
+````````````````````````````````````````````````````````````````````````````
+driver.get("http://compendiumdev.co.uk/selenium/calculate.php");
+new WebDriverWait(driver,10).
+                  until(new TitleContainsCondition("Selenium"));
+```````````````````````````````````````````````````````````````````````````
+
+
+This opens the driver to the page and waits until the Title contains the text “Selenium”.
+
+And I had to write code to support this i.e. my TitleContainsCondition class:
+
+
+
+````````````````````````````````````````````````````````````````````````````
+public class TitleContainsCondition implements ExpectedCondition {          
+    private String subMenuText;
+
+    public TitleContainsCondition(final String subMenuText) {
+        this.subMenuText=subMenuText;
+    }
+
+    @Override
+    public Boolean apply(@Nullable WebDriver webDriver) {
+        return webDriver.getTitle().contains(this.subMenuText);
+    }
+}
+````````````````````````````````````````````````````````````````````````````
+
+
+But now, I don’t have to, the ExpectedConditions class has a method for this common contingency.
+
+
+````````````````````````````````````````````````````````````````````````````
+driver.get("http://compendiumdev.co.uk/selenium/calculate.php");
+new WebDriverWait(driver,10).
+                 until(ExpectedConditions.titleContains("Selenium"));
+````````````````````````````````````````````````````````````````````````````
+
+
+
+I used a similar approach in my production code, I typically have a factory for the ExpectedConditions so that I can write.
+
+````````````````````````````````````````````````````````````````````````````
+
+driver.get("http://compendiumdev.co.uk/selenium/calculate.php");
+new WebDriverWait(driver,10).
+                 until(WaitFor.titleContainsCondition("Selenium"));
+````````````````````````````````````````````````````````````````````````````
+
+
+I’ll keep my WaitFor Class hanging around because it still does things that are not common to most folk, since we test applications which are domain specific.
+
+And if you haven’t noticed the ExpectedConditions before, now might be a good time to try them out.
