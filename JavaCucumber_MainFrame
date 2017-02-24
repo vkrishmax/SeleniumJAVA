@@ -1,0 +1,152 @@
+Automated Acceptance Testing for Mainframe With Cucumber and Jagacy
+Selenium doesn't automate mainframe green screens. However, there are tools available that can be used to automate mainframe green screen interaction.
+
+  by Unmesh Gundecha  ·  Oct. 18, 16 · DevOps Zone
+Like (2)
+ 
+ Comment (0)
+
+ 
+Save   Tweet  1,956 Views
+Join the DZone community and get the full member experience. JOIN FOR FREE
+The DevOps Zone is brought to you in partnership with Sonatype Nexus. The Nexus Suite helps scale your DevOps delivery with continuous component intelligence integrated into development tools, including Eclipse, IntelliJ, Jenkins, Bamboo, SonarQube and more. Schedule a demo today. 
+I often get questions around mainframe automation using Selenium. However, Selenium automates browsers, and that's it. Selenium does not automate mainframe green screens. It's a completely different technology.
+
+Automating mainframe green screens is primarily needed to test front to back scenarios in complex transaction processing systems with web and mobile integration.
+
+However, there are tools available that can be used to automate mainframe green screen interaction. In this post, we will see how to use Jagacy3270 from Jagacy Software along with Cucumber for writing automated Acceptance tests on mainframe green screens (also known as CICS interface).
+
+About Jagacy3270
+Jagacy3270 is a 3270 screen-scraping library written entirely in Java. As described on Jagacy product website it supports SSL, TN3270E, internationalization, and over thirty languages. This library can be used to create highly reliable and faster screen-scraping applications. However, this tool comes with a cost and details are available on the website.
+
+We can use this same screen-scraping capability to create automated tests on mainframe green screens.
+
+Jagacy provides Session3270 class through which we can connect to a Mainframe host and read or write to screens to perform actions.
+
+Writing Automated Acceptance Tests for Green Screens
+We can use Jagacy along with testing frameworks like Cucumber in Agile software development to automate acceptance criteria for mainframe user stories involving green screen interaction. These tests can be integrated into CI/CD pipeline and run in headless mode (Jagacy provides an Emulator screen mode or headless mode).
+
+In this post, we will use a mainframe host used in Jagacy examples to create a simple automated acceptance test for a phonebook application. Here is our example user story:
+
+As I university mainframe user
+I should be able to search faculty members in Phonebook
+So I can contact them for help
+Here is feature file with one of the acceptance criteria or scenario that searches for a faculty phone number on Phonebook application:
+
+Feature: Phonebook
+  As I university mainframe user
+  I should be able to search faculty members in Phonebook
+  So I can contact them for help
+  Scenario: Search faculty phone number using name
+    Given I start a new emulator session
+    When I open phonbook application
+    And search for faculty name "NAME"
+    Then I should see the results matching with my search criteria
+      |NAME1              111-111-1111  LIBRARIES                    5000|
+      |NAME2             UNAVAILABLE  MARY KAY O'CONNOR PROCESS    3122|
+To automate screen entry and retrieve values, we need to use screen coordinates by using row and column numbers (typically 3270 sessions are 24x80 rows and columns long).
+
+We can use the PageObject pattern to abstract mainframe green screens and provide screen actions and state to tests. For example, here is a HomeScreen object that provides a feature on the home screen:
+
+package com.example.screens;
+import com.example.Fields.EntryField;
+import com.example.session.Session;
+import com.example.Fields.LabelField;
+import com.jagacy.Key;
+import com.jagacy.util.JagacyException;
+/**
+ * Created by upgundecha on 14/10/16.
+ */
+public class HomeScreen {
+    private Session session;
+    private String screenCrc = "0xb0c10358";
+    // Screen fields
+    private LabelField waitForLabel =
+            new LabelField(17, 6, "TEXAS A & M UNIVERSITY");
+    private EntryField applicationEntryField = new EntryField(23, 1);
+    public HomeScreen(final Session s) throws JagacyException {
+        this.session = s;
+        if (!session.waitForTextLabel(waitForLabel)) {
+            throw new IllegalStateException("Not Home screen!");
+        }
+        if (session.getCrc32() != Long.decode(screenCrc)) {
+            throw new IllegalStateException("Home Screen has been changed!");
+        }
+    }
+    /**
+     * Open Phonbook Menu screen.
+     * @return Phonbook Menu Screen
+     * @throws JagacyException JagacyException
+     */
+    public final PhonbookMenuScreen openPhonbook() throws JagacyException {
+        session.setEntryFieldValue(applicationEntryField, "PHONBOOK");
+        session.writeKey(Key.ENTER);
+        session.waitForChange(10000);
+        return new PhonbookMenuScreen(session);
+    }
+}
+We can check if a correct page is displayed in the emulator by using the arbitrary text displayed on the screen. We can also use CRC of the screen to make sure it is not updated; otherwise, tests might fail as fields or text values on screen are not found at specified locations.
+
+Finally, we will call the PageObjects in step definitions to perform the scenario and validate the output:
+
+package com.example.test;
+import com.example.screens.HomeScreen;
+import com.example.screens.PhonbookMenuScreen;
+import com.example.screens.PhonbookSearchScreen;
+import com.example.session.Session;
+import com.jagacy.util.JagacyException;
+import cucumber.api.Scenario;
+import cucumber.api.java.After;
+import cucumber.api.java.Before;
+import cucumber.api.java.en.Given;
+import cucumber.api.java.en.Then;
+import cucumber.api.java.en.When;
+import static org.junit.Assert.*;
+import java.util.List;
+/**
+ * Created by upgundecha on 14/10/16.
+ */
+public class Stepdefs {
+    private Session session;
+    private HomeScreen homeScreen;
+    private PhonbookMenuScreen phonbookMenuScreen;
+    private PhonbookSearchScreen phonbookSearchScreen;
+    private Scenario scenario;
+    @Before
+    public void setUp(Scenario scenario){
+        this.scenario = scenario;
+    }
+    @Given("^I start a new emulator session$")
+    public void i_start_a_new_emulator_session() throws Throwable {
+        session = new Session("test");
+        session.open();
+    }
+    @When("^I open phonbook application$")
+    public void i_open_phonbook_application() throws Throwable {
+        homeScreen = new HomeScreen(session);
+        scenario.embed(session.getScreenshot(), "image/png");
+        phonbookMenuScreen = homeScreen.openPhonbook();
+    }
+    @When("^search for faculty name \"([^\"]*)\"$")
+    public void search_for_faculty_name(String q) throws Throwable {
+        scenario.embed(session.getScreenshot(), "image/png");
+        phonbookSearchScreen = phonbookMenuScreen.openFacultyStaffListing();
+        phonbookSearchScreen.searchByFirstOrMiddleName(q);
+    }
+    @Then("^I should see the results matching with my search criteria$")
+    public void i_should_see_the_results_matching_with_my_search_criteria(List<String> records) throws Throwable {
+        scenario.embed(session.getScreenshot(), "image/png");
+        assertEquals(records, phonbookSearchScreen.getResults());
+    }
+    @After
+    public void tearDown() throws JagacyException {
+        session.close();
+    }
+}
+We can also get the screenshot (not available as part of Jagacy API) embedded in the reports.
+
+If you already have a well established Selenium framework (on JVM) and want to automate Mainframe Green screens, you can use above approach with Cucumber or any other xUnit testing framework that you might be using.
+
+The complete source code for this post is available here. Please drop me a message for access with your Github username. I have built this simple framework on top of Jagacy API. If you need any further information or have suggestions, please do reach out to me.
+
+The DevOps Zone is brought to you in partnership with Sonatype Nexus. Use the Nexus Suite to automate your software supply chain and ensure you're using the highest quality open source components at every step of the development lifecycle. Get Nexus today. 
