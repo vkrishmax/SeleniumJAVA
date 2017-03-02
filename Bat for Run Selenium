@@ -1,0 +1,2 @@
+cd C:\name   
+java -cp "C:\name;C:\name\src\supportlibraries\*" allocator.Allocator
