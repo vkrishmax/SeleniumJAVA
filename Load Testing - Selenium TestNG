@@ -1,0 +1,212 @@
+Selenium TestNG Load Testing
+When using Selenium for performance or load testings, in addition to using Selenium Grid for parallel execution, we can use Selenium + TestNG for load testing.
+
+In this example, you will learn how to use @Test attributes invocationCount and threadPoolSize to perform a load test or stress test on a site.
+
+Note: in this example below, Mahara ePortfolio application is used as a test application. 
+
+@Test(invocationCount=?) determine how many times TestNG should run this test method.
+
+This example is using Selenium Master Test Application Login Test as a test for load testing.
+
+Step 1: create a Java Project as shown on the picture below. Add TestNG and Selenium library to the project.
+
+
+
+ 
+
+Step 2: write the following code in the PerformanceTest.Java class
+
+package com.seleniummaster.performancetest;
+
+import static org.testng.AssertJUnit.assertEquals;
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
+public class PerformanceTest {
+  private WebDriver browser;
+  private String baseUrl;
+@Test(invocationCount=2)
+public void SeleniumMasterTest()
+{
+  baseUrl="http://demo.mahara.org";
+  browser=new FirefoxDriver();
+  browser.get(baseUrl+"/index.php");
+   for (int second = 0;; second++) {
+        if (second >= 60) Assert.fail("timeout");
+        try { if (isElementPresent(By.cssSelector("img[alt=\"Mahara\"]"))) 
+          break; } catch (Exception e) {}
+      }
+   browser.findElement(By.id("login_login_username")).clear();
+   browser.findElement(By.id("login_login_username")).sendKeys("test");
+   browser.findElement(By.id("login_login_password")).clear();
+   browser.findElement(By.id("login_login_password")).sendKeys("XXXXXXXX"); //password is omitted
+   browser.findElement(By.id("login_submit")).click();
+  try{
+    assertEquals(browser.findElement(By.cssSelector("ul.cr > li > a")).getText(),"Test Selenium");
+  }
+  
+  catch(Exception e)
+  {
+
+  }
+  finally{
+    browser.quit();
+  }
+
+}
+  @BeforeClass
+  public void beforeClass() {
+  }
+
+  @AfterClass
+  public void afterClass() {
+  }
+  
+  private boolean isElementPresent(By by) {
+      try {
+        browser.findElement(by);
+        return true;
+      } catch (NoSuchElementException e) {
+        return false;
+      }
+    }
+
+}
+Step 3: run the test as TestNG Test and observer the test result.
+
+Output: you will notice that Firefox browser will prompts out and close 2 times.
+
+Console Result
+
+[TestNG] Running:
+  C:\Users\XXXXX\AppData\Local\Temp\testng-eclipse--707665315\testng-customsuite.xml
+
+PASSED: SeleniumMasterTest
+PASSED: SeleniumMasterTest
+
+===============================================
+    Default test
+    Tests run: 2, Failures: 0, Skips: 0
+===============================================
+
+
+===============================================
+Default suite
+Total tests run: 2, Failures: 0, Skips: 0
+===============================================
+
+[TestNG] Time taken by org.testng.reporters.jq.Main@4a1b4407: 32 ms
+[TestNG] Time taken by org.testng.reporters.EmailableReporter2@ae4c118: 16 ms
+[TestNG] Time taken by [FailedReporter passed=0 failed=0 skipped=0]: 0 ms
+[TestNG] Time taken by org.testng.reporters.SuiteHTMLReporter@2cb0730e: 62 ms
+[TestNG] Time taken by org.testng.reporters.JUnitReportReporter@6b26a8dc: 16 ms
+[TestNG] Time taken by org.testng.reporters.XMLReporter@8a6e020: 0 ms
+
+
+@Test(invocationCount=?, threadPoolSize=?) 
+
+ThreadPoolSize attribute tells TestNG to create a thread pool to run the test method via multiple threads. With thread pool, it will greatly decrease the running time of the test
+
+package com.seleniummaster.performancetest;
+
+import static org.testng.AssertJUnit.assertEquals;
+import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.Test;
+public class PerformanceTest {
+  private WebDriver browser;
+  private String baseUrl;
+@Test(invocationCount=5,threadPoolSize = 5)
+public void SeleniumMasterTest()
+{
+  System.out.printf("%n[START] Thread Id : %s is started!",Thread.currentThread().getId());
+  baseUrl="http://demo.mahara.org";
+  browser=new FirefoxDriver();
+  browser.get(baseUrl+"/index.php");
+   for (int second = 0;; second++) {
+        if (second >= 60) Assert.fail("timeout");
+        try { if (isElementPresent(By.cssSelector("img[alt=\"Mahara\"]"))) 
+          break; } catch (Exception e) {}
+      }
+   browser.findElement(By.id("login_login_username")).clear();
+   browser.findElement(By.id("login_login_username")).sendKeys("test");
+   browser.findElement(By.id("login_login_password")).clear();
+   browser.findElement(By.id("login_login_password")).sendKeys("XXXXXX"); //password is omitted
+   browser.findElement(By.id("login_submit")).click();
+  try{
+    assertEquals(browser.findElement(By.cssSelector("ul.cr > li > a")).getText(),"Test Selenium");
+  }
+  
+  catch(Exception e)
+  {
+
+  }
+  finally{
+    System.out.printf("%n[END] Thread Id : %s",Thread.currentThread().getId());
+    browser.quit();
+  }
+
+}
+  @BeforeClass
+  public void beforeClass() {
+  }
+
+  @AfterClass
+  public void afterClass() {
+  }
+  
+  private boolean isElementPresent(By by) {
+      try {
+        browser.findElement(by);
+        return true;
+      } catch (NoSuchElementException e) {
+        return false;
+      }
+    }
+
+}
+Test Result with threadPoolSize
+
+[TestNG] Running:
+  C:\Users\XXXXXX\AppData\Local\Temp\testng-eclipse--1991595942\testng-customsuite.xml
+
+[ThreadUtil] Starting executor timeOut:0ms workers:5 threadPoolSize:5
+
+[START] Thread Id : 13 is started!
+[START] Thread Id : 14 is started!
+[START] Thread Id : 11 is started!
+[START] Thread Id : 10 is started!
+[START] Thread Id : 12 is started!
+[END] Thread Id : 11
+[END] Thread Id : 12
+[END] Thread Id : 10
+[END] Thread Id : 14
+
+PASSED: SeleniumMasterTest
+PASSED: SeleniumMasterTest
+PASSED: SeleniumMasterTest
+PASSED: SeleniumMasterTest
+FAILED: SeleniumMasterTest
+
+===============================================
+    Default test
+    Tests run: 5, Failures: 1, Skips: 0
+===============================================
+
+
+===============================================
+Default suite
+Total tests run: 5, Failures: 1, Skips: 0
+===============================================
+< Prev
