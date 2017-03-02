@@ -1,0 +1,71 @@
+Use Selenium WebDriver with JMeter
+The Apache JMeter™ desktop application is open source software, a 100% pure Java application designed to load test functional behavior and measure performance. It was originally designed for testing Web Applications but has since expanded to other test functions.
+
+In this example, you learn how to use Selenium WebDriver with JMeter to test performance of a web application. This example uses Mahara ePortfolio system as an example. We test the application's login and logout performance. 
+
+To use Selenium Webdriver with JMeter, simply install "WebDriver Set" plugins. The WebDriver sampler is very useful if you want to test for performance AJAX, GWT based web applications and simulated user actions. 
+
+Step 1: download Apache JMeter
+
+To download Apache JMeter, visit the site http://jmeter.apache.org/download_jmeter.cgi . click on the file "apache-jmeter-2.11.zip file" and download it. Unzip the file. 
+
+ 
+
+ 
+
+ 
+
+Step 2: download WebDriver plugins for JMeter. visit download page "http://jmeter-plugins.org"
+
+
+
+
+
+Step 3: unzip JMeterPlugins-WebDriver-1.1.1.zip. Unzipped files must be copied into the lib folder of Jmeter. To test if WebDriver plugins installed open Jmeter and test if there is jp@gc - Firefox Driver Config.
+
+
+
+Step 4: write your WebDriver script as usual, then add "Thread Group" to your "Test Plan".
+
+Add "Config Element" -> "HTTP Cookie Manager", "Config Element" -> "jp@gc - Firefox Driver Config", "Sampler" -> "jp@gc - Web Driver Sampler", "Listener" -> "View Results in Table". Just add two Samplers: one for Login and the other one is for Logout.
+
+
+
+Step 5: open the Login (Web Driver Sampler) and add this code. 
+
+var pkg=JavaImporter(org.openqa.selenium) //import java selenium package
+var support_ui=JavaImporter(org.openqa.selenium.support.ui.WebDriverWait) //import WebDriverWait Package
+var ui=JavaImporter(org.openqa.selenium.support.ui) //import Selenium Support UI package
+var wait=new support_ui.WebDriverWait(WDS.browser,5000) // wait 5 seconds until page loads
+WDS.sampleResult.sampleStart() //sample starting point
+WDS.browser.get('http://demo.mahara.org/') // opens website ""http://demo.mahara.org"
+var usernameField = WDS.browser.findElement(pkg.By.id('login_login_username')) //define username field
+usernameField.sendKeys(['student1']) // types word “student1” in field
+var passwordField = WDS.browser.findElement(pkg.By.id('login_login_password')) //define username field
+passwordField.sendKeys(['Testing1']) // types word “Testing1” in field
+var loginButton=WDS.browser.findElement(pkg.By.id('login_submit')) //define login submit button
+loginButton.click() //click on the login button
+WDS.log.info(WDS.name + ' has logged an entry') //log message
+WDS.sampleResult.sampleEnd()
+
+Step 6: open the Logout (Web Driver Sampler) and add this code
+
+var pkg=JavaImporter(org.openqa.selenium) //import java selenium package
+var support_ui=JavaImporter(org.openqa.selenium.support.ui.WebDriverWait) //import WebDriverWait Package
+var ui=JavaImporter(org.openqa.selenium.support.ui) //import Selenium Support UI package
+WDS.sampleResult.sampleStart() //sample starting point
+var wait=new support_ui.WebDriverWait(WDS.browser,60000) // wait 60s econds until page loads
+wait.until(ui.ExpectedConditions.presenceOfElementLocated(pkg.By.linkText('Logout'))) //wait until logout link displays
+var logoutButton=WDS.browser.findElement(pkg.By.linkText('Logout')) //defind logout link
+logoutButton.click() //click on logout link
+WDS.sampleResult.sampleEnd()
+
+Step 7: set the Thread Group as shown on the picture below. we are using 5 users and 2 repeat, so the test will run 10 times. 
+
+
+
+Step 8: open the "View Results in Table" and you will see the result table below. 
+
+
+
+Step 9: in the result window, see the average response time. 
