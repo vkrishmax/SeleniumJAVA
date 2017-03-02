@@ -1,0 +1,90 @@
+1. Child Axes
+The child axis defines the children of the context node.
+Child::*
+Syntax:
+
+//child::table 
+The first location step selects the child element node of the root node, which represents the element root
+
+element in the source document.
+The child axis is the default axis, so it need not be explicitly expressed in the abbreviated.
+
+It can be simply re-written as:
+//table/tbody
+
+//child::*/child::td[position()>1]
+The position ( ) function, evaluates the context position of the context node within the context size. The position ( ) function is applied to the selected nodes in document order. It will select the second td in a table
+
+It will select all the nodes that are Child nodes of table.
+Please find the below screen shot for example.
+Child Axes
+
+2. Parent Axes
+The parent axis contains only a maximum of one node. The parent node may be either the root node or an element node.
+The root node has no parent; therefore, when the context node is the root node, the parent axis is empty. For all other element nodes the parent axis contains one node.
+
+Syntax:
+
+parent::node()
+
+The below example will selects the parent node of the input tag of Id='email'.
+Ex: //input[@id='email']/parent::*
+
+the above can also be re-written as 
+//input[@id='email']/..
+Below is the image that shows you to identify using above example.
+Parent Axes
+
+3. Following Axes
+“Following axis contains all nodes in the same document as the context node that are after the context node in document order.
+
+Syntax:
+
+The below syntax selects the immediate node following the specified node input[@id='email']
+//input[@id='email']/following::*
+Below is the image that shows you to identify using above example.
+It will identify the immediate node which start after the current node.
+
+Following Axes
+
+The below syntax selects the immediate node of tag 'tr' with the specified node input[@id='email']
+
+//input[@id='email']/following::tr
+Below is the image that shows you to identify using above example.
+It will identify the immediate node which start after the current node.
+
+Following Axes
+
+4. Following Sibling Axes
+
+The following-sibling axis selects those nodes that are siblings of the context node (that
+is, the context node and its sibling nodes share a parent node) and which occur later in
+document order than the context node.
+
+Syntax:
+//select[@id='month']/following-sibling::*
+//select[@id='month']/following-sibling::select/
+
+Please check the below image for the above syntax executed
+
+Following Sibling Axes
+
+5. Preceding Axes
+The preceding axis contains all nodes in the same document as the context node that are before the context node in document order.
+
+Syntax:
+//input[@id='pass']/preceding::tr
+
+Below screen shot shows how the preceding axes selects nodes that appear before the current node in the document, except ancestors, attribute nodes and namespace .
+
+Preceding Axes
+
+6. Preceding Sibling Axes
+
+The preceding-sibling axis selects those nodes which are siblings of the context node (that is, the context node and its sibling nodes share a parent node) and which occur earlier in document order than the context node.
+
+Syntax:
+
+//select[@id='day']/preceding-sibling::select/
+//select[@id='day']/preceding-sibling::*
+ 
